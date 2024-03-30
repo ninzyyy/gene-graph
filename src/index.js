@@ -152,6 +152,23 @@ function processCSV(results) {
   }
 
   createLegend(categoryToColor);
+
+  // Call createLegend to populate the legend initially
+  createLegend(categoryToColor); // Assuming categoryToColor is defined
+
+  document.getElementById('legend-search').addEventListener('input', function() {
+    const searchValue = this.value.toLowerCase();
+    const items = document.querySelectorAll('#legend-container .legend-item');
+
+    items.forEach(item => {
+      const category = item.querySelector('span').textContent.toLowerCase();
+      if (category.includes(searchValue)) {
+        item.style.display = ''; // Show the item if it matches
+      } else {
+        item.style.display = 'none'; // Hide the item if it doesn't match
+      }
+    });
+  });
 }
 
 function createLegend(categoryToColor) {
