@@ -113,18 +113,37 @@ function processCSV(results) {
 
   // Additional interactive features integration starts here
 
-  // Add clickNode listener for clicking on a node
   sigmaInstance.on('clickNode', (event) => {
     const nodeId = event.node;
     updateHoverState(nodeId);
+
+    // Collect categories of clicked node and its neighbors
+    const relevantCategories = new Set();
+    relevantCategories.add(graph.getNodeAttribute(nodeId, 'category'));
+    graph.neighbors(nodeId).forEach(neighborId => {
+      relevantCategories.add(graph.getNodeAttribute(neighborId, 'category'));
+    });
+
+    // Filter categoryToColor for relevant categories and create the legend
+    const filteredCategoryToColor = Object.keys(categoryToColor)
+      .filter(category => relevantCategories.has(category))
+      .reduce((obj, key) => {
+        obj[key] = categoryToColor[key];
+        return obj;
+      }, {});
+
+    createLegend(filteredCategoryToColor);
     refreshGraphStyles();
   });
+
 
   // Add clickStage listener for clicking on the background
   sigmaInstance.on('clickStage', () => {
     updateHoverState(null); // Reset the hover state when the background is clicked
+    createLegend(categoryToColor); // Reset the legend to its full state
     refreshGraphStyles();
   });
+
 
   function updateHoverState(nodeId) {
     if (nodeId) {
