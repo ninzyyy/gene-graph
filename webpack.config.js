@@ -1,6 +1,5 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
-const CopyPlugin = require('copy-webpack-plugin'); // Import the plugin
 
 module.exports = {
   entry: './src/index.js',
@@ -17,20 +16,24 @@ module.exports = {
           loader: 'babel-loader',
         },
       },
-      // Add more loaders here if needed
+      {
+        test: /\.css$/,
+        use: ['style-loader', 'css-loader'],
+      },
+      // Add more loaders here for other file types as needed.
     ],
   },
   plugins: [
     new HtmlWebpackPlugin({
       template: './src/index.html',
-    })
+    }),
+    // Add other plugins here as needed.
   ],
-  // Add devServer configuration
   devServer: {
     static: {
-      directory: path.join(__dirname, 'public'),
+      directory: path.join(__dirname, 'dist'),
     },
-    // You can add other devServer options here as needed
+    // Include other devServer options as needed.
   },
   mode: 'development',
 };

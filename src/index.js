@@ -4,6 +4,7 @@ import Graph from "graphology";
 import { circular } from "graphology-layout";
 import forceAtlas2 from "graphology-layout-forceatlas2";
 import { cropToLargestConnectedComponent } from "graphology-components";
+import './styles.css';
 
 document.addEventListener('DOMContentLoaded', function() {
     const fileInput = document.getElementById('file-input');
@@ -83,7 +84,7 @@ function processCSV(results) {
 
   forceAtlas2.assign(graph, {
     settings: forceSettings,
-    iterations: 50
+    iterations: 1
   });
 
   const container = document.getElementById('sigma-container');
@@ -149,4 +150,30 @@ function processCSV(results) {
     });
     sigmaInstance.refresh();
   }
+
+  createLegend(categoryToColor);
+}
+
+function createLegend(categoryToColor) {
+  const legendContainer = document.getElementById('legend-container');
+  // Clear existing legend items first, to prevent duplicates if function is called multiple times
+  legendContainer.innerHTML = '';
+
+  // Object.keys() to get categories, then sort them alphabetically
+  Object.keys(categoryToColor).sort().forEach(category => {
+    const item = document.createElement('div');
+    item.classList.add('legend-item');
+
+    const colorBox = document.createElement('div');
+    colorBox.classList.add('color-box');
+    colorBox.style.backgroundColor = categoryToColor[category];
+
+    const categoryText = document.createElement('span');
+    categoryText.textContent = category;
+
+    item.appendChild(colorBox);
+    item.appendChild(categoryText);
+
+    legendContainer.appendChild(item);
+  });
 }
