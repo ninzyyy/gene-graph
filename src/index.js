@@ -4,6 +4,9 @@ import Graph from "graphology";
 import { circular } from "graphology-layout";
 import forceAtlas2 from "graphology-layout-forceatlas2";
 import { cropToLargestConnectedComponent } from "graphology-components";
+import { refreshGraphStyles } from './visuals.js';
+import { stringToColor } from './utils.js';
+import { createLegend } from './visuals.js';
 import './styles.css';
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -29,32 +32,11 @@ function processCSV(results) {
   const graph = new Graph();
   const categoryToColor = {}; // Object to map categories to colors
 
-  // Color hashing function: converts a string to a color code
-  function stringToColor(str) {
-    // Ensure str is a string to prevent errors
-    if (typeof str !== 'string' || str === undefined || str === null) {
-      str = 'default'; // Fallback string in case of undefined or non-string input
-    }
-
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-      hash = str.charCodeAt(i) + ((hash << 5) - hash);
-    }
-
-    let color = '#';
-    for (let i = 0; i < 3; i++) {
-      const value = (hash >> (i * 8)) & 0xFF;
-      color += ('00' + value.toString(16)).substr(-2);
-    }
-    console.log(`Category: ${str}, Color: ${color}`); // Logging for debugging
-    return color;
-  }
-
   results.data.forEach(function(line) {
       const sourceNode = line['Official Symbol Interactor A'];
       const targetNode = line['Official Symbol Interactor B'];
       const category = line['Ontology Term Names'];
-      console.log(`Processing: ${sourceNode}, ${targetNode}, Category: ${category}`); // Debug log
+      console.log(`Processing: ${sourceNode}, ${targetNode}, Category: ${category}`);
 
 
       if (!categoryToColor[category]) {
@@ -101,6 +83,11 @@ function processCSV(results) {
     hoveredNeighbors: new Set(),
   };
 
+  // Call createLegend to populate the legend initially
+  createLegend(categoryToColor); // Assuming categoryToColor is defined
+
+  // Additional interactive features integration starts here
+
   function updateHoverState(nodeId) {
     if (nodeId) {
       currentState.hoveredNode = nodeId;
@@ -110,8 +97,6 @@ function processCSV(results) {
       currentState.hoveredNeighbors.clear();
     }
   }
-
-  // Additional interactive features integration starts here
 
   sigmaInstance.on('clickNode', (event) => {
     const nodeId = event.node;
@@ -133,47 +118,16 @@ function processCSV(results) {
       }, {});
 
     createLegend(filteredCategoryToColor);
-    refreshGraphStyles();
+    refreshGraphStyles(sigmaInstance, currentState, categoryToColor);
+
   });
 
-
-  // Add clickStage listener for clicking on the background
   sigmaInstance.on('clickStage', () => {
     updateHoverState(null); // Reset the hover state when the background is clicked
     createLegend(categoryToColor); // Reset the legend to its full state
-    refreshGraphStyles();
+    refreshGraphStyles(sigmaInstance, currentState, categoryToColor);
+
   });
-
-
-  function updateHoverState(nodeId) {
-    if (nodeId) {
-      currentState.hoveredNode = nodeId;
-      currentState.hoveredNeighbors = new Set(graph.neighbors(nodeId));
-    } else {
-      currentState.hoveredNode = null;
-      currentState.hoveredNeighbors.clear();
-    }
-  }
-
-  function refreshGraphStyles() {
-    sigmaInstance.setSetting('nodeReducer', (node, data) => {
-      // Adjusted logic based on click events instead of hover
-      if (currentState.hoveredNode && (node === currentState.hoveredNode || currentState.hoveredNeighbors.has(node))) {
-        return { ...data, color: data.color, size: data.size * 4, label: node };
-      } else if (!currentState.hoveredNode) {
-        const originalColor = categoryToColor[data.category] || '#CCCCCC';
-        return { ...data, color: originalColor, size: data.size, label: node };
-      } else {
-        return { ...data, color: '#CCCCCC', label: node };
-      }
-    });
-    sigmaInstance.refresh();
-  }
-
-  createLegend(categoryToColor);
-
-  // Call createLegend to populate the legend initially
-  createLegend(categoryToColor); // Assuming categoryToColor is defined
 
   document.getElementById('legend-search').addEventListener('input', function() {
     const searchValue = this.value.toLowerCase();
@@ -187,29 +141,5 @@ function processCSV(results) {
         item.style.display = 'none'; // Hide the item if it doesn't match
       }
     });
-  });
-}
-
-function createLegend(categoryToColor) {
-  const legendContainer = document.getElementById('legend-container');
-  // Clear existing legend items first, to prevent duplicates if function is called multiple times
-  legendContainer.innerHTML = '';
-
-  // Object.keys() to get categories, then sort them alphabetically
-  Object.keys(categoryToColor).sort().forEach(category => {
-    const item = document.createElement('div');
-    item.classList.add('legend-item');
-
-    const colorBox = document.createElement('div');
-    colorBox.classList.add('color-box');
-    colorBox.style.backgroundColor = categoryToColor[category];
-
-    const categoryText = document.createElement('span');
-    categoryText.textContent = category;
-
-    item.appendChild(colorBox);
-    item.appendChild(categoryText);
-
-    legendContainer.appendChild(item);
   });
 }
